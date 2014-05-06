@@ -1,0 +1,11 @@
+{
+    "applications": {
+        "Cat Chat": {
+            "applicationId": "mSQvp25ruX1Lof4zt88C1adbE7aEgVUhVcT9jJG9", 
+            "masterKey": "nmfiZcAJM9CS0ddg17puHVrxYRV95aSwtNLKPn9B"
+        }, 
+        "_default": {
+            "link": "Cat Chat"
+        }
+    }
+}
