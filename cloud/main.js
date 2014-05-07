@@ -3,6 +3,7 @@ Parse.Cloud.afterSave("PendingMessage", function(request) {
 
   	query = new Parse.Query("User");
   	query.equalTo("email", toEmail);
+  	query.equalTo("emailVerified", true);
   	query.first({
       success: function(user) {
         if (user) {
