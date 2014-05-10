@@ -53,11 +53,13 @@ Parse.Cloud.define("sendMessage", function(request, response){
 		toUser = userFinder.findByFacebookID(params.toFacebook);
 	}
 	if (toUser){
-		var message = new Parse.Object.extend("Message");
+		var Message = Parse.Object.extend("Message");
+
+		var message = new Message();
 		message.set("toUser", toUser);
 		message.set("fromUser", request.user);
 		message.set("image", params.image);
-		message.set("messageDate", params.messageData);
+		message.set("messageData", params.messageData);
 		message.save(null, {useMasterKey : true,
 		error : function(error){
 			console.error(error.message);
