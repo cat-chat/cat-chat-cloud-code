@@ -32,3 +32,33 @@ Parse.Cloud.afterSave("PendingMessage", function(request) {
     }
   });
 });
+
+Parse.Cloud.beforeSave("Message", function(request, response){
+	var message = request.object;
+
+	var toUser = message.get("toUser");
+	var fromUser = message.get("fromUser");
+
+	if (! toUser || ! fromUser){
+		response.error("Messages need both a to and a from user.");
+		return;
+	}
+	if (! message.get("image")){
+		response.error("Messages need a cat image");
+		return;
+	}
+
+	if (message.isNew()){
+		message.set("messageDate", Date(), {silent : true});
+	}
+	var acl = new Parse.ACL(null);
+	acl.setReadAccess(toUser, true);
+	acl.setReadAccess(fromUser, true);
+
+	if (message.setACL(acl, null)){
+		response.success();
+	}
+	else{
+		response.error("error setting ACL");
+	}
+});
