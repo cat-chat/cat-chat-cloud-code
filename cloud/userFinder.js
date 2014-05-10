@@ -7,7 +7,7 @@ exports.findByEmail = function(email){
             if (user){
                 return user;
             }
-            retrun;
+            return;
         },
         error : function(error) {
           console.error("Failed to retrieve users with email: " + toEmail + ", error code:" + error.code + " : " + error.message);
@@ -23,7 +23,7 @@ exports.findByFacebookID = function(facebookID){
             if (user){
                 return user;
             }
-            retrun;
+            return;
         },
         error : function(error) {
           console.error("Failed to retrieve users with email: " + toEmail + ", error code:" + error.code + " : " + error.message);
