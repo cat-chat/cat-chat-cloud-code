@@ -1,7 +1,7 @@
 Parse.Cloud.afterSave("PendingMessage", function(request) {
 	var toEmail = request.object.get("toEmail");
 
-  	query = new Parse.Query("User");
+  	var query = new Parse.Query("User");
   	query.equalTo("email", toEmail);
   	query.equalTo("emailVerified", true);
   	query.first({
@@ -35,6 +35,39 @@ Parse.Cloud.afterSave("PendingMessage", function(request) {
 });
 
 
+Parse.Cloud.define("sendMessage", function(request, response){
+	var params = request.params;
+	if (! params.toEmail && ! params.toFacebook){
+		response.error("Message needs either toEmail or toFacebook");
+		return;
+	}
+	if (! params.image){
+		response.error("Message needs an image");
+		return;
+	}
+	var userFinder = require('cloud/userFinder.js');
+	var toUser;
+	if (params.toEmail){
+		toUser = userFinder.findByEmail(params.toEmail);
+	}else{
+		toUser = userFinder.findByFacebookID(params.toFacebook);
+	}
+	if (toUser){
+		var message = new Parse.Object.extend("Message");
+		message.set("toUser", toUser);
+		message.set("fromUser", request.user);
+		message.set("image", params.image);
+		message.set("messageDate", params.messageData);
+		message.save(null, {useMasterKey : true,
+		error : function(error){
+			console.error(error.message);
+		}});
+	}else{
+
+	}
+	response.success();
+});
+
 Parse.Cloud.beforeSave("Message", function(request, response){
 	var message = request.object;
 	var messageHelper = require('cloud/messageHelpers.js');
@@ -43,6 +76,30 @@ Parse.Cloud.beforeSave("Message", function(request, response){
 	}
 	if (!messageHelper.configureMessage(message, response)){
 		return;
+	}
+	response.success();
+});
+
+Parse.Cloud.beforeSave("PendingMessage", function(request, response){
+	var message = request.object;
+	var acl = new Parse.ACL(null);
+	acl.setReadAccess(message.get("fromUser"), true);
+	if (! message.setACL(acl, null)){
+		response.error("error setting ACL");
+		return;
+	}
+	response.success();
+});
+
+Parse.Cloud.beforeSave(Parse.User, function(request, response){
+	var user = request.object;
+	var authData, facebookID;
+	authData = user.get("authData");
+	if (authData){
+		facebookID = authData.facebook.id;
+	}
+	if (facebookID){
+		user.set("facebookID", facebookID, null);
 	}
 	response.success();
 });
