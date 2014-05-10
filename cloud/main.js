@@ -13,6 +13,7 @@ Parse.Cloud.afterSave("PendingMessage", function(request) {
 			message.set("toUser", user);
 			message.set("fromUser", request.object.get("fromUser"));
 			message.set("image", request.object.get("image"));
+			message.set("messageDate", request.object.get("messageData"));
 			message.save();
 
 			// could do this in beforeSave instead, but then we have to return error when a User exists
@@ -33,32 +34,31 @@ Parse.Cloud.afterSave("PendingMessage", function(request) {
   });
 });
 
+
 Parse.Cloud.beforeSave("Message", function(request, response){
 	var message = request.object;
-
-	var toUser = message.get("toUser");
-	var fromUser = message.get("fromUser");
-
-	if (! toUser || ! fromUser){
-		response.error("Messages need both a to and a from user.");
+	var messageHelper = require('cloud/messageHelpers.js');
+	if (!messageHelper.isValidMessage(message, response)){
 		return;
 	}
-	if (! message.get("image")){
-		response.error("Messages need a cat image");
+	if (!messageHelper.configureMessage(message, response)){
 		return;
 	}
+	response.success();
+});
 
-	if (message.isNew()){
-		message.set("messageDate", Date(), {silent : true});
-	}
-	var acl = new Parse.ACL(null);
-	acl.setReadAccess(toUser, true);
-	acl.setReadAccess(fromUser, true);
+Parse.Cloud.afterSave(Parse.User, function(request, response){
+	var user = request.object;
 
-	if (message.setACL(acl, null)){
-		response.success();
+	var userEmail = user.getEmail;
+	if(userEmail && user.get("emailVerified")){
+		var query = new Parse.Query("PendingMessage");
+		query.equalTo("toEmail", userEmail);
+		query.each({
+			callback : function(pendingMessage){
+
+			}
+		})
 	}
-	else{
-		response.error("error setting ACL");
-	}
+
 });
