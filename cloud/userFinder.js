@@ -5,8 +5,13 @@ exports.findByEmail = function(email, callback) {
     query.equalTo("emailVerified", true);
     query.first({
         success: function(user) {
-            console.log("Found user with email: " + email + " user " + user);
-            callback(user);
+            if(user) {
+                console.log("Found user with email: " + email + " user " + user);
+                callback(user);
+            } else {
+                console.log("No user for email: " + email);
+                callback();
+            }
         },
         error: function(error) {
             console.log("Failed whilst trying to find user with email: " + email);
