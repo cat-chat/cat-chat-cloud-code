@@ -20,19 +20,21 @@ exports.findByEmail = function(email, callback) {
     });
 };
 
-exports.findByFacebookID = function(facebookID){
+exports.findByFacebookID = function(facebookID, callback){
     console.log("Looking for fb user: " + facebookID);
 
     var query = new Parse.Query("User");
     query.equalTo("facebookID", facebookID);
+    query.equalTo("emailVerified", true);
     query.first({
         success : function(user){
             if (user){
                 console.log("Found user with facebookID: " + facebookID + " user");
-                return user;
+                callback(user);
+            } else {
+                console.log("Failed to find user with facebookID: " + facebookID);
+                callback();
             }
-            console.log("Failed to find user with facebookID: " + facebookID);
-            return;
         },
         error : function(error) {
           console.error("Failed to retrieve users with facebookID: " + facebookID + ", error code:" + error.code + " : " + error.message);

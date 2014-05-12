@@ -11,58 +11,60 @@ Parse.Cloud.define("sendMessage", function (request, response) {
     var userFinder = require('cloud/userFinder.js');
     if (params.toEmail) {
         userFinder.findByEmail(params.toEmail, function (user) {
+            sendMessageToUser(user, params, "toEmail", params.toEmail, response);
+        });
+    } else {
+        userFinder.findByFacebookID(params.toFacebook, function (user) {
+            sendMessageToUser(user, params, "toFacebook", params.toFacebook, response);
+        });
+    }
+});
 
-            var CatImage = Parse.Object.extend("CatImage");
-            var image = new CatImage();
-            image.id = params.image;
+function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response) {
+    var CatImage = Parse.Object.extend("CatImage");
+    var image = new CatImage();
+    image.id = params.image;
 
-            var User = Parse.Object.extend("User");
-            var from = new User();
-            from.id = params.fromUser;
+    var User = Parse.Object.extend("User");
+    var from = new User();
+    from.id = params.fromUser;
 
-            Parse.Cloud.useMasterKey();
+    Parse.Cloud.useMasterKey();
 
-            if (user) {
-                var Message = Parse.Object.extend("Message");
+    if (user) {
+        var Message = Parse.Object.extend("Message");
 
-                var message = new Message();
-                message.set("toUser", user);
-                message.set("fromUser", from);
-                message.set("image", image);
-                message.set("messageData", params.messageData);
-                message.save(null, {
-                    success: function (savedMessage) {
-                        console.log("win");
-                        response.success("Successfully added a message for " + user + " from " + params.fromUser);
-                    },
-                    error: function (error) {
-                        console.log("fail");
-                        response.error(error);
-                    }
-                });
-            } else {
-                var PendingMessage = Parse.Object.extend("PendingMessage");
-
-                var message = new PendingMessage();
-                message.set("toEmail", params.toEmail);
-                message.set("fromUser", from);
-                message.set("image", image);
-                message.set("messageData", params.messageData);
-                message.save(null, {
-                    success: function (savedMessage) {
-                        response.success("Successfully added a pending message for " + user + " from " + params.fromUser);
-                    },
-                    error: function (error) {
-                        response.error(error);
-                    }
-                });
+        var message = new Message();
+        message.set("toUser", user);
+        message.set("fromUser", from);
+        message.set("image", image);
+        message.set("messageData", params.messageData);
+        message.save(null, {
+            success: function (savedMessage) {
+                response.success("Successfully added a message for " + user.id + " from " + params.fromUser);
+            },
+            error: function (error) {
+                response.error(error);
             }
         });
     } else {
-        //   toUser = userFinder.findByFacebookID(params.toFacebook);
-        response.error("Lookup by facebook id not implemented yet");
+        var PendingMessage = Parse.Object.extend("PendingMessage");
+
+        var pm = new PendingMessage();
+        pm.set(fieldName, toUserFBIdOrEmail);
+        pm.set("fromUser", from);
+        pm.set("image", image);
+        pm.set("messageData", params.messageData);
+        pm.save(null, {
+            success: function (savedMessage) {
+                response.success("Successfully added a pending message for " + toUserFBIdOrEmail + " from " + params.fromUser);
+            },
+            error: function (error) {
+                response.error(error);
+            }
+        });
     }
-});
+}
 
 Parse.Cloud.beforeSave("Message", function (request, response) {
     var message = request.object;
@@ -101,18 +103,3 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
     }
     response.success();
 });
-
-// Parse.Cloud.afterSave(Parse.User, function (request, response) {
-//     var user = request.object;
-
-//     var userEmail = user.getEmail;
-//     if (userEmail && user.get("emailVerified")) {
-//         var query = new Parse.Query("PendingMessage");
-//         query.equalTo("toEmail", userEmail);
-//         query.each({
-//             callback: function (pendingMessage) {
-
-//             }
-//         })
-//     }
-// });
