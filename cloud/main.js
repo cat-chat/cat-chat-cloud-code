@@ -99,6 +99,7 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
         facebookID = authData.facebook.id;
     }
     if (facebookID) {
+        Parse.Cloud.useMasterKey();
         user.set("facebookID", facebookID, null);
     }
     response.success();
