@@ -33,7 +33,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
 
     if (user) {
         var userQuery = new Parse.Query(Parse.User);
-        userQuery.equals("id", user.id);
+        userQuery.equalTo("id", user.id);
 
         var Message = Parse.Object.extend("Message");
 
