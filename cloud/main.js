@@ -81,6 +81,51 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
     }
 }
 
+Parse.Cloud.define("resendVerificationEmail", function (request, response) {
+    var params = request.params;
+    if(params.userid) {
+        var query = new Parse.Query("User");
+        query.get(params.userid, {
+            success: function(user) {
+                if(user) {
+                    Parse.Cloud.useMasterKey();
+                    // it seems the best way to resend email verification is to set the email field again
+                    // https://parse.com/questions/it-would-be-nice-to-allow-users-to-request-another-email-to-verify-their-email-address
+                    // https://parse.com/questions/resending-an-activation-email-to-a-user-thats-not-authenticated
+
+                    // TODO: find a better way because this is freaking ridiculous
+                    // to reset the email, we have to set it to something else, then set it back :< 
+                    // https://www.parse.com/questions/re-verification-of-email-address-re-sending-email-from-parse
+                    user.set("email", "cat@chat.com");
+                    user.save(null, {
+                      success: function(savedUser) {
+                            savedUser.set("email", user.get('username'));
+                            savedUser.save(null, {
+                                  success: function(u) {
+                                        response.success('Email verification sent');
+                                  },
+                                  error: function(u, error) {
+                                        response.error("Failed to save email on user with id " + params.userid);
+                                  }
+                                });
+                      },
+                      error: function(savedUser, error) {
+                        response.error("Failed to save email on user with id " + params.userid);
+                      }
+                    });
+                } else {
+                    response.error("Failed to lookup user with id " + params.userid);
+                }
+            },
+            error: function(error) {
+                response.error("Failed to find user with id " + params.userid);
+            }
+        });
+    } else {
+        response.error('Cannot resend verification email to user when no user provided. Expected field userid');
+    }
+});
+
 Parse.Cloud.beforeSave("Message", function (request, response) {
     var message = request.object;
     var messageHelper = require('cloud/messageHelpers.js');
