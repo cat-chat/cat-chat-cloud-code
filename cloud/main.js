@@ -44,7 +44,8 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
         message.set("messageData", params.messageData);
         message.save(null, {
             success: function (savedMessage) {
-                response.success("Successfully added a message for " + user.id + " from " + params.fromUser);
+                console.log("Successfully added a message for " + user.id + " from " + params.fromUser);
+                
                 Parse.Push.send({
                         where: userQuery,
                         data: {
@@ -52,9 +53,9 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
                       }
                     },
                     { success: function() {
-                        console.log("Successfully sent push notification");
+                        response.success("Successfully sent push notification");
                       }, error: function(err) {
-                        console.log(err);
+                        response.error(err);
                       }
                     });
             },
