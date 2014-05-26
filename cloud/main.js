@@ -33,7 +33,10 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
 
     if (user) {
         var userQuery = new Parse.Query(Parse.User);
-        userQuery.equalTo("id", user.id);
+        userQuery.equalTo("objectId", user.id);
+
+        var pushQuery = new Parse.Query(Parse.Installation);
+        pushQuery.matchesQuery('user', userQuery);
 
         var Message = Parse.Object.extend("Message");
 
@@ -47,7 +50,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
                 console.log("Successfully added a message for " + user.id + " from " + params.fromUser);
                 
                 Parse.Push.send({
-                        where: userQuery,
+                        where: pushQuery,
                         data: {
                             alert: "New message on CatChat!"
                       }
