@@ -55,7 +55,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
                     { success: function() {
                         response.success("Successfully sent push notification");
                       }, error: function(err) {
-                        response.error(err);
+                        response.success('Message queued, but failed to send push notification');
                       }
                     });
             },
