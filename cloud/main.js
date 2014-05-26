@@ -46,7 +46,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
             success: function (savedMessage) {
                 response.success("Successfully added a message for " + user.id + " from " + params.fromUser);
                 Parse.Push.send({
-                        where: toUserQuery,
+                        where: userQuery,
                         data: {
                             alert: "New message on CatChat!"
                       }
