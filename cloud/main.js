@@ -34,7 +34,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
     if (user) {
         var userQuery = new Parse.Query(Parse.User);
         userQuery.equals("id", user.id);
-         
+
         var Message = Parse.Object.extend("Message");
 
         var message = new Message();
@@ -50,10 +50,10 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
                         data: {
                             alert: "New message on CatChat!"
                       }
-                    }, 
-                    { success: function() { 
+                    },
+                    { success: function() {
                         console.log("Successfully sent push notification");
-                      }, error: function(err) { 
+                      }, error: function(err) {
                         console.log(err);
                       }
                     });
@@ -94,9 +94,9 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
                     // https://parse.com/questions/resending-an-activation-email-to-a-user-thats-not-authenticated
 
                     // TODO: find a better way because this is freaking ridiculous
-                    // to reset the email, we have to set it to something else, then set it back :< 
+                    // to reset the email, we have to set it to something else, then set it back :<
                     // https://www.parse.com/questions/re-verification-of-email-address-re-sending-email-from-parse
-                    user.set("email", "cat@chat.com");
+                    user.set("email", "catchat@example.com");
                     user.save(null, {
                       success: function(savedUser) {
                             savedUser.set("email", user.get('username'));
