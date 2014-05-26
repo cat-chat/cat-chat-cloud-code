@@ -32,6 +32,9 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
     Parse.Cloud.useMasterKey();
 
     if (user) {
+        var userQuery = new Parse.Query(Parse.User);
+        userQuery.equals("id", user.id);
+         
         var Message = Parse.Object.extend("Message");
 
         var message = new Message();
@@ -42,6 +45,18 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
         message.save(null, {
             success: function (savedMessage) {
                 response.success("Successfully added a message for " + user.id + " from " + params.fromUser);
+                Parse.Push.send({
+                        where: toUserQuery,
+                        data: {
+                            alert: "New message on CatChat!"
+                      }
+                    }, 
+                    { success: function() { 
+                        console.log("Successfully sent push notification");
+                      }, error: function(err) { 
+                        console.log(err);
+                      }
+                    });
             },
             error: function (error) {
                 response.error(error);
