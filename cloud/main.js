@@ -76,6 +76,26 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
         pm.set("messageData", params.messageData);
         pm.save(null, {
             success: function (savedMessage) {
+                if(fieldName == "toEmail") {
+                    var constants = require('cloud/constants.js');
+
+                    var Mailgun = require('mailgun');
+                    Mailgun.initialize(constants.mailgunDomain, constants.mailgunAPIKey);
+
+                    Mailgun.sendEmail({
+                          to: toUserFBIdOrEmail,
+                          from: "catchat@catchat.com",
+                          subject: "Someone wants to chat to you on CatChat!",
+                          text: "To read the messages you've been sent, sign up with this email address. \n\nWith <3 from CatChat"
+                        }, {
+                          success: function(httpResponse) {
+                            console.log(httpResponse);
+                          },
+                          error: function(httpResponse) {
+                            console.error(httpResponse);
+                          }
+                        });
+                }
                 response.success("Successfully added a pending message for " + toUserFBIdOrEmail + " from " + params.fromUser);
             },
             error: function (error) {
