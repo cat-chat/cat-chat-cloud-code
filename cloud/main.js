@@ -84,7 +84,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
 
                     Mailgun.sendEmail({
                           to: toUserFBIdOrEmail,
-                          from: "catchat@catchat.com",
+                          from: "help@catchatapp.com",
                           subject: "Someone wants to chat to you on CatChat!",
                           text: "To read the messages you've been sent, sign up with this email address. \n\nWith <3 from CatChat"
                         }, {
@@ -120,7 +120,7 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
                     // TODO: find a better way because this is freaking ridiculous
                     // to reset the email, we have to set it to something else, then set it back :<
                     // https://www.parse.com/questions/re-verification-of-email-address-re-sending-email-from-parse
-                    user.set("email", "catchat@example.com");
+                    user.set("email", "uhoh@catchatapp.com");
                     user.save(null, {
                       success: function(savedUser) {
                             savedUser.set("email", user.get('username'));
@@ -153,11 +153,11 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
 Parse.Cloud.beforeSave("Message", function (request, response) {
     var message = request.object;
     var messageHelper = require('cloud/messageHelpers.js');
-    if (!messageHelper.isValidMessage(message, response)) {
+    if (!messageHelper.isValidMessage(message)) {
         response.error("Message not valid");
         return;
     }
-    if (!messageHelper.configureMessage(message, response)) {
+    if (!messageHelper.configureMessage(message)) {
         response.error("Error configuring message");
         return;
     }
@@ -187,4 +187,51 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
         user.set("facebookID", facebookID, null);
     }
     response.success();
+});
+
+Parse.Cloud.afterSave(Parse.User, function (request) {
+    // we need admin rights to see all pending messages to know if this updated user can see them
+    Parse.Cloud.useMasterKey();
+
+    var user = request.object;
+    var email = user.get("email");
+
+    // move messages from PendingMessage to Messages if the user has been sent messages before having signed up
+    if(user.get("email")) {
+        var PendingMessage = Parse.Object.extend("PendingMessage");
+        var query = new Parse.Query(PendingMessage);
+        query.equalTo("toEmail", email);
+        query.find({
+          success: function(pendingMessages) {
+            var Message = Parse.Object.extend("Message");
+
+            var messages = [];
+            for (var i = 0; i < pendingMessages.length; i++) { 
+                var pendingMsg = pendingMessages[i];
+                    
+                messages[i] = new Message();
+                messages[i].set("toUser", user);
+                messages[i].set("fromUser", pendingMsg.get("fromUser"));
+                messages[i].set("image", pendingMsg.get("image"));
+                messages[i].set("messageData", pendingMsg.get("messageData"));
+            }
+
+            console.log("Moving " + messages.length + " pending messages into messages");
+
+            Parse.Object.saveAll(messages, {
+                success: function(list) {
+                    console.log("Successfully moved users pending mesages to message table");
+
+                    Parse.Object.destroyAll(pendingMessages);
+                },
+                error: function(error) {
+                    console.log("Error: " + error.code + " " + error.message);
+                },
+              });
+          },
+          error: function(error) {
+                console.log("Error: " + error.code + " " + error.message);
+          }
+        });
+    }
 });
