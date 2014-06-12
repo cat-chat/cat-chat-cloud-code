@@ -84,7 +84,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
 
                     Mailgun.sendEmail({
                           to: toUserFBIdOrEmail,
-                          from: "catchat@catchat.com",
+                          from: "help@catchatapp.com",
                           subject: "Someone wants to chat to you on CatChat!",
                           text: "To read the messages you've been sent, sign up with this email address. \n\nWith <3 from CatChat"
                         }, {
@@ -120,7 +120,7 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
                     // TODO: find a better way because this is freaking ridiculous
                     // to reset the email, we have to set it to something else, then set it back :<
                     // https://www.parse.com/questions/re-verification-of-email-address-re-sending-email-from-parse
-                    user.set("email", "catchat@example.com");
+                    user.set("email", "uhoh@catchatapp.com");
                     user.save(null, {
                       success: function(savedUser) {
                             savedUser.set("email", user.get('username'));
@@ -187,4 +187,63 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
         user.set("facebookID", facebookID, null);
     }
     response.success();
+});
+
+Parse.Cloud.afterSave(Parse.User, function (request) {
+    var user = request.object;
+    var email = user.get("email");
+
+    // move messages from PendingMessage to Messages if the user has been sent messages before having signed up
+    if(user.get("email")) {
+        console.log('found user by email: ' + email);
+
+        // we need to see all pending messages to know if this updated user can see them
+        Parse.Cloud.useMasterKey();
+
+        var PendingMessage = Parse.Object.extend("PendingMessage");
+        var query = new Parse.Query(PendingMessage);
+        query.equalTo("toEmail", email);
+        query.find({
+          success: function(pendingMessages) {
+            console.log("Successfully retrieved " + pendingMessages.length + " pending messages");
+            
+            var Message = Parse.Object.extend("Message");
+
+            var messages = [];
+            for (var i = 0; i < pendingMessages.length; i++) { 
+                var pendingMsg = pendingMessages[i];
+                    
+                messages[i] = new Message();
+                message.set("toUser", user);
+                message.set("fromUser", pendingMsg.fromUser);
+                message.set("image", pendingMsg.image);
+                message.set("messageData", pendingMsg.messageData);
+                message.save(null, {
+                    success: function (msg) {
+                        console.log("Successfully added a message for a pending msg " + email);
+                    },
+                    error: function (error) {
+                        console.log("failed to add message for pending message " + email);
+                    }
+                });
+            }
+
+            console.log("Moving " + messages.length + " pending messages into messages");
+
+            Parse.Object.saveAll(messages, {
+                success: function(list) {
+                    console.log("Successfully moved users pending mesages to message table");
+
+                    Parse.Object.destroyAll(pendingMessages);
+                },
+                error: function(error) {
+                    console.log(error);
+                },
+              });
+          },
+          error: function(error) {
+            alert("Error: " + error.code + " " + error.message);
+          }
+        });
+    }
 });
