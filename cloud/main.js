@@ -84,7 +84,7 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
 
                     Mailgun.sendEmail({
                           to: toUserFBIdOrEmail,
-                          from: "help@catchatapp.com",
+                          from: "catchat@catchatapp.com",
                           subject: "Someone wants to chat to you on CatChat!",
                           text: "To read the messages you've been sent, sign up with this email address. \n\nWith <3 from CatChat"
                         }, {
