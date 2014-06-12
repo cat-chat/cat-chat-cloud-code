@@ -153,11 +153,11 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
 Parse.Cloud.beforeSave("Message", function (request, response) {
     var message = request.object;
     var messageHelper = require('cloud/messageHelpers.js');
-    if (!messageHelper.isValidMessage(message, response)) {
+    if (!messageHelper.isValidMessage(message)) {
         response.error("Message not valid");
         return;
     }
-    if (!messageHelper.configureMessage(message, response)) {
+    if (!messageHelper.configureMessage(message)) {
         response.error("Error configuring message");
         return;
     }
@@ -190,23 +190,19 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
 });
 
 Parse.Cloud.afterSave(Parse.User, function (request) {
+    // we need admin rights to see all pending messages to know if this updated user can see them
+    Parse.Cloud.useMasterKey();
+
     var user = request.object;
     var email = user.get("email");
 
     // move messages from PendingMessage to Messages if the user has been sent messages before having signed up
     if(user.get("email")) {
-        console.log('found user by email: ' + email);
-
-        // we need to see all pending messages to know if this updated user can see them
-        Parse.Cloud.useMasterKey();
-
         var PendingMessage = Parse.Object.extend("PendingMessage");
         var query = new Parse.Query(PendingMessage);
         query.equalTo("toEmail", email);
         query.find({
           success: function(pendingMessages) {
-            console.log("Successfully retrieved " + pendingMessages.length + " pending messages");
-            
             var Message = Parse.Object.extend("Message");
 
             var messages = [];
@@ -214,18 +210,10 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
                 var pendingMsg = pendingMessages[i];
                     
                 messages[i] = new Message();
-                message.set("toUser", user);
-                message.set("fromUser", pendingMsg.fromUser);
-                message.set("image", pendingMsg.image);
-                message.set("messageData", pendingMsg.messageData);
-                message.save(null, {
-                    success: function (msg) {
-                        console.log("Successfully added a message for a pending msg " + email);
-                    },
-                    error: function (error) {
-                        console.log("failed to add message for pending message " + email);
-                    }
-                });
+                messages[i].set("toUser", user);
+                messages[i].set("fromUser", pendingMsg.get("fromUser"));
+                messages[i].set("image", pendingMsg.get("image"));
+                messages[i].set("messageData", pendingMsg.get("messageData"));
             }
 
             console.log("Moving " + messages.length + " pending messages into messages");
@@ -237,12 +225,12 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
                     Parse.Object.destroyAll(pendingMessages);
                 },
                 error: function(error) {
-                    console.log(error);
+                    console.log("Error: " + error.code + " " + error.message);
                 },
               });
           },
           error: function(error) {
-            alert("Error: " + error.code + " " + error.message);
+                console.log("Error: " + error.code + " " + error.message);
           }
         });
     }

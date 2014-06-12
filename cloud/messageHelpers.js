@@ -1,20 +1,20 @@
-exports.isValidMessage = function(message, response){
+exports.isValidMessage = function(message){
     var toUser = message.get("toUser");
     var fromUser = message.get("fromUser");
 
     if (! toUser || ! fromUser){
-        response.error("Messages need both a to and a from user.");
+        console.log("Messages need both a to and a from user.");
         return false;
     }
     if (! message.get("image")){
-        response.error("Messages need a cat image");
+        console.log("Messages need a cat image");
         return false;
     }
 
     return true;
 }
 
-exports.configureMessage = function(message, response){
+exports.configureMessage = function(message){
     if (message.isNew() && !message.get("messageDate")){
         message.set("messageDate", new Date(), {silent : true});
     }
@@ -23,7 +23,6 @@ exports.configureMessage = function(message, response){
     acl.setReadAccess(message.get("fromUser"), true);
 
     if (! message.setACL(acl, null)){
-        response.error("error setting ACL");
         return false;
     }
     return true;
