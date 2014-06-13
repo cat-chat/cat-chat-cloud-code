@@ -48,11 +48,13 @@ function sendMessageToUser(user, params, fieldName, toUserFBIdOrEmail, response)
         message.save(null, {
             success: function (savedMessage) {
                 console.log("Successfully added a message for " + user.id + " from " + params.fromUser);
-                
+
                 Parse.Push.send({
                         where: pushQuery,
                         data: {
-                            alert: "New message on CatChat!"
+                            alert: "New message on CatChat!",
+                            sound: "default",
+                            badge: "Increment"
                       }
                     },
                     { success: function() {
@@ -206,9 +208,9 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
             var Message = Parse.Object.extend("Message");
 
             var messages = [];
-            for (var i = 0; i < pendingMessages.length; i++) { 
+            for (var i = 0; i < pendingMessages.length; i++) {
                 var pendingMsg = pendingMessages[i];
-                    
+
                 messages[i] = new Message();
                 messages[i].set("toUser", user);
                 messages[i].set("fromUser", pendingMsg.get("fromUser"));
