@@ -20,6 +20,8 @@ exports.configureMessage = function(message){
     }
     var acl = new Parse.ACL(null);
     acl.setReadAccess(message.get("toUser"), true);
+    acl.setWriteAccess(message.get("toUser"), true);
+    
     acl.setReadAccess(message.get("fromUser"), true);
 
     if (! message.setACL(acl, null)){

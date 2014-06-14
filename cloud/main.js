@@ -119,6 +119,9 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
         query.equalTo("toEmail", email);
         query.find({
           success: function(pendingMessages) {
+            var acl = new Parse.ACL(null);
+            acl.setWriteAccess(message.get("toUser"), true);
+
             var Message = Parse.Object.extend("Message");
 
             var messages = [];
@@ -130,6 +133,7 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
                 messages[i].set("fromUser", pendingMsg.get("fromUser"));
                 messages[i].set("image", pendingMsg.get("image"));
                 messages[i].set("messageData", pendingMsg.get("messageData"));
+                messages[i].setACL(acl, null);
             }
 
             console.log("Moving " + messages.length + " pending messages into messages");
