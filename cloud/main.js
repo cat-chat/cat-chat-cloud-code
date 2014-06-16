@@ -119,35 +119,37 @@ Parse.Cloud.afterSave(Parse.User, function (request) {
         query.equalTo("toEmail", email);
         query.find({
           success: function(pendingMessages) {
-            var acl = new Parse.ACL(null);
-            acl.setWriteAccess(message.get("toUser"), true);
+            if(pendingMessages.length > 0) {
+                var acl = new Parse.ACL(null);
+                acl.setWriteAccess(user, true);
 
-            var Message = Parse.Object.extend("Message");
+                var Message = Parse.Object.extend("Message");
 
-            var messages = [];
-            for (var i = 0; i < pendingMessages.length; i++) {
-                var pendingMsg = pendingMessages[i];
+                var messages = [];
+                for (var i = 0; i < pendingMessages.length; i++) {
+                    var pendingMsg = pendingMessages[i];
 
-                messages[i] = new Message();
-                messages[i].set("toUser", user);
-                messages[i].set("fromUser", pendingMsg.get("fromUser"));
-                messages[i].set("image", pendingMsg.get("image"));
-                messages[i].set("messageData", pendingMsg.get("messageData"));
-                messages[i].setACL(acl, null);
-            }
+                    messages[i] = new Message();
+                    messages[i].set("toUser", user);
+                    messages[i].set("fromUser", pendingMsg.get("fromUser"));
+                    messages[i].set("image", pendingMsg.get("image"));
+                    messages[i].set("messageData", pendingMsg.get("messageData"));
+                    messages[i].setACL(acl, null);
+                }
 
-            console.log("Moving " + messages.length + " pending messages into messages");
+                console.log("Moving " + messages.length + " pending messages into messages");
 
-            Parse.Object.saveAll(messages, {
-                success: function(list) {
-                    console.log("Successfully moved users pending mesages to message table");
+                Parse.Object.saveAll(messages, {
+                    success: function(list) {
+                        console.log("Successfully moved users pending mesages to message table");
 
-                    Parse.Object.destroyAll(pendingMessages);
-                },
-                error: function(error) {
-                    console.log("Error: " + error.code + " " + error.message);
-                },
-              });
+                        Parse.Object.destroyAll(pendingMessages);
+                    },
+                    error: function(error) {
+                        console.log("Error: " + error.code + " " + error.message);
+                    },
+                });
+              }
           },
           error: function(error) {
                 console.log("Error: " + error.code + " " + error.message);
