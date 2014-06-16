@@ -45,6 +45,7 @@ Parse.Cloud.define("resendVerificationEmail", function (request, response) {
                                         response.success('Email verification sent');
                                   },
                                   error: function(u, error) {
+                                        console.log("Error: " + error.code + " " + error.message);
                                         response.error("Failed to save email on user with id " + params.userid);
                                   }
                                 });
@@ -102,6 +103,13 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
         Parse.Cloud.useMasterKey();
         user.set("facebookID", facebookID, null);
     }
+
+    var email = user.get("email");
+    if(email) {
+        user.set("username", email);
+        user.save();
+    }
+    
     response.success();
 });
 
