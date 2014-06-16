@@ -104,12 +104,6 @@ Parse.Cloud.beforeSave(Parse.User, function (request, response) {
         user.set("facebookID", facebookID, null);
     }
 
-    var email = user.get("email");
-    if(email) {
-        user.set("username", email);
-        user.save();
-    }
-    
     response.success();
 });
 
